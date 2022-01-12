@@ -1,24 +1,23 @@
-const express = require("express");
-const PORT = process.env.PORT || 3001
+const express = require('express');
+const { animals } = require('./data/animals');
+
+const PORT = process.env.PORT || 3001;
 const app = express();
-
-
-const { animals } = require("./data/animals");
 
 // this function will take req.query as an argument, filter through animals and return a new filtered array by either diet, species or name.
 function filterByQuery(query, animalsArray) {
   let personalityTraitsArray = [];
-  // note that we save the animalsArray as filteredResults here:
+  // Note that we save the animalsArray as filteredResults here:
   let filteredResults = animalsArray;
-  if (query.diet) {
-    // save personalityTraits as dedicated array
-    // if personality traits is a string, place it into a new array and save
+  if (query.personalityTraits) {
+    // Save personalityTraits as a dedicated array.
+    // If personalityTraits is a string, place it into a new array and save.
     if (typeof query.personalityTraits === "string") {
       personalityTraitsArray = [query.personalityTraits];
     } else {
       personalityTraitsArray = query.personalityTraits;
     }
-    // loop through each trait in personalitytraits array
+    // Loop through each trait in the personalityTraits array:
     personalityTraitsArray.forEach((trait) => {
       // Check the trait against each animal in the filteredResults array.
       // Remember, it is initially a copy of the animalsArray,
@@ -31,6 +30,8 @@ function filterByQuery(query, animalsArray) {
         (animal) => animal.personalityTraits.indexOf(trait) !== -1
       );
     });
+  }
+  if (query.diet) {
     filteredResults = filteredResults.filter(
       (animal) => animal.diet === query.diet
     );
@@ -45,7 +46,14 @@ function filterByQuery(query, animalsArray) {
       (animal) => animal.name === query.name
     );
   }
+  // return the filtered results:
   return filteredResults;
+}
+
+// takes id + array, returns single animal object.
+function findById(id, animalsArray) {
+  const result = animalsArray.filter(animal => animal.id === id)[0];
+  return result;
 }
 
 /*  
@@ -54,12 +62,21 @@ function filterByQuery(query, animalsArray) {
     The second takeaway is that we are using the send() method from the res parameter (short for response) to send the string Hello! to our client.
 */
 
-app.get("/api/animals", (req, res) => {
+app.get('/api/animals', (req, res) => {
   let results = animals;
   if (req.query) {
     results = filterByQuery(req.query, results);
   }
   res.json(results);
+});
+
+app.get('/api/animals/:id', (req, res) => {
+  const result = findById(req.params.id, animals);
+  if (result) {
+    res.json(result);
+  } else {
+    res.send(404);
+  }
 });
 
 app.listen(PORT, () => {
